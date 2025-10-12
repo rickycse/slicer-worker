@@ -4,8 +4,12 @@ from urllib.parse import urlparse
 import boto3
 from botocore.config import Config
 from dotenv import load_dotenv
+import os, tempfile
 
 load_dotenv()
+
+HOME_SLICE = os.path.expanduser("~/.slice")   # or "~/slice"
+os.makedirs(HOME_SLICE, exist_ok=True)
 
 QUEUE_URL = os.environ.get("QUEUE_URL")
 RESULTS_QUEUE_URL = os.environ.get("RESULTS_QUEUE_URL")
@@ -80,6 +84,10 @@ def compute_cost_if_missing(summary):
         summary["filament_cost"] = round((summary["filament_grams"] / 1000.0) * PRICE_PER_KG, 2)
     return summary
 
+def ensure_exists(path, label):
+            if not os.path.isfile(path):
+                raise FileNotFoundError(f"{label} not found: {path}")
+
 def slice_once(msg_body):
     payload = json.loads(msg_body)
     input_stl = payload["input_stl"]
@@ -87,11 +95,17 @@ def slice_once(msg_body):
     output_gcode = payload["output_gcode"]
     job_id = payload.get("job_id")
 
-    workdir = tempfile.mkdtemp(prefix="slice-")
+    workdir = tempfile.mkdtemp(prefix="slice-", dir=HOME_SLICE)
     try:
         local_stl = os.path.join(workdir, "model.stl")
         local_gcode = os.path.join(workdir, "out.gcode")
         s3_download(input_stl, local_stl)
+
+        print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
+        print(f"[JOB] input_stl={input_stl}")
+        if config_ini: print(f"[JOB] config_ini={config_ini}")
+        print(f"[JOB] output_gcode={output_gcode}")
+        ensure_exists(local_stl, "Input STL")
 
         # Build the command
         cmd = PRUSA + [local_stl, "--export-gcode", "--output", local_gcode]
@@ -103,6 +117,7 @@ def slice_once(msg_body):
         print("Running:", " ".join(cmd))
         subprocess.check_call(cmd)
 
+        ensure_exists(local_gcode, "Output G-code")
         s3_upload(local_gcode, output_gcode)
         summary = parse_gcode_summary(local_gcode)
         summary = compute_cost_if_missing(summary)

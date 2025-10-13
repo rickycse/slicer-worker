@@ -99,8 +99,13 @@ def slice_once(msg_body):
     try:
         local_stl = os.path.join(workdir, "model.stl")
         local_gcode = os.path.join(workdir, "out.gcode")
+        local_ini = os.path.join(workdir, "config.ini")
+
         print(f"Downloading {input_stl}...")
         s3_download(input_stl, local_stl)
+
+        print(f"Downloading {config_ini}...")
+        s3_download(config_ini, local_ini)
 
         print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
         print(f"[JOB] input_stl={input_stl}")
@@ -109,12 +114,7 @@ def slice_once(msg_body):
         ensure_exists(local_stl, "Input STL")
 
         # Build the command
-        cmd = PRUSA + [local_stl, "--export-gcode", "--output", local_gcode]
-        if config_ini:
-            local_ini = os.path.join(workdir, "config.ini")
-            s3_download(config_ini, local_ini)
-            cmd += ["--load", local_ini]
-
+        cmd = PRUSA + [local_stl, "--load", config_ini, "--export-gcode", "--output", local_gcode]
         print("Running:", " ".join(cmd))
         subprocess.check_call(cmd)
 

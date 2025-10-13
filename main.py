@@ -91,6 +91,12 @@ def ensure_exists(path, label):
             if not os.path.isfile(path):
                 raise FileNotFoundError(f"{label} not found: {path}")
 
+def to_sandbox_path(host_path: str) -> str:
+    # map /home/ssm-user/...  ->  /var/home/ssm-user/...
+    if host_path.startswith(HOME_DIR + "/"):
+        return "/var" + host_path
+    return host_path
+
 def slice_once(msg_body):
     payload = json.loads(msg_body)
     input_stl = payload["input_stl"]
@@ -113,14 +119,18 @@ def slice_once(msg_body):
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")
 
-        print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
-        print(f"[JOB] input_stl={input_stl}")
-        print(f"[JOB] config_ini={config_ini}")
-        print(f"[JOB] output_gcode={output_gcode}")
+        sand_stl = to_sandbox_path(local_stl)
+        sand_ini = to_sandbox_path(local_ini)
+        sand_out = to_sandbox_path(local_gcode)
+
+        # print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
+        # print(f"[JOB] input_stl={input_stl}")
+        # print(f"[JOB] config_ini={config_ini}")
+        # print(f"[JOB] output_gcode={output_gcode}")
 
         cmd = [
             "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-            local_stl, "--load", config_ini, "--export-gcode", "--output", local_gcode
+            sand_stl, "--load", sand_ini, "--export-gcode", "--output", sand_out
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)

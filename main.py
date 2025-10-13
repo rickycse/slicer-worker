@@ -118,6 +118,21 @@ def slice_once(msg_body):
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")
 
+        HOME_DIR = os.path.expanduser("~")  # /home/ssm-user
+        def to_sandbox(p): return "/var" + p if p.startswith(HOME_DIR + "/") else p
+
+        sand_ini  = to_sandbox(local_ini)    # /var/home/ssm-user/...
+        sand_stl  = to_sandbox(local_stl)
+        sand_out  = to_sandbox(local_gcode)
+
+        cmd = [
+            "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
+            "--load", sand_ini,
+            "--export-gcode",
+            "--output", sand_out,
+            sand_stl
+        ]
+
         # print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
         # print(f"[JOB] input_stl={input_stl}")
         # print(f"[JOB] config_ini={config_ini}")

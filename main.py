@@ -111,43 +111,15 @@ def slice_once(msg_body):
         s3_download(config_ini, local_ini)
 
         print("\n=== Dumping config.ini for debug ===")
+        print("CONFIG PATH: ", local_ini)
         with open(local_ini) as f:
             print(f.read())
         print("=== End of config.ini ===\n")
 
-        ensure_exists(local_stl, "Input STL")
-        ensure_exists(local_ini, "Config INI")
-
-        HOME_DIR = os.path.expanduser("~")  # /home/ssm-user
-        def to_sandbox(p): return "/var" + p if p.startswith(HOME_DIR + "/") else p
-
-        sand_ini  = to_sandbox(local_ini)    # /var/home/ssm-user/...
-        sand_stl  = to_sandbox(local_stl)
-        sand_out  = to_sandbox(local_gcode)
-
         cmd = [
             "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-            "--load", sand_ini,
-            "--export-gcode",
-            "--output", sand_out,
-            sand_stl
+            "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
         ]
-
-        # print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
-        # print(f"[JOB] input_stl={input_stl}")
-        # print(f"[JOB] config_ini={config_ini}")
-        # print(f"[JOB] output_gcode={output_gcode}")
-
-        check_cmd = [
-            "flatpak", "run", "--filesystem=home", "--command=bash", "com.prusa3d.PrusaSlicer",
-            "-lc", f'test -f "{local_ini}" && echo INI_OK; test -f "{local_stl}" && echo STL_OK; ls -l "{os.path.dirname(local_stl)}"'
-        ]
-        subprocess.check_call(check_cmd)
-
-        # cmd = [
-        #     "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-        #     "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
-        # ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)
 

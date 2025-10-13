@@ -114,7 +114,7 @@ def slice_once(msg_body):
         ensure_exists(local_stl, "Input STL")
 
         # Build the command
-        cmd = PRUSA + [local_stl, "--load", config_ini, "--export-gcode", "--output", local_gcode]
+        cmd = PRUSA + [local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode]
         print("Running:", " ".join(cmd))
         subprocess.check_call(cmd)
 

@@ -131,7 +131,7 @@ def slice_once(msg_body):
 
         cmd = [
             "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-            local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode
+            "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)

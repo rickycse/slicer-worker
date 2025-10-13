@@ -92,7 +92,6 @@ def ensure_exists(path, label):
                 raise FileNotFoundError(f"{label} not found: {path}")
 
 def to_sandbox_path(host_path: str) -> str:
-    # map /home/ssm-user/...  ->  /var/home/ssm-user/...
     if host_path.startswith(HOME_DIR + "/"):
         return "/var" + host_path
     return host_path
@@ -106,9 +105,9 @@ def slice_once(msg_body):
 
     workdir = tempfile.mkdtemp(prefix="slice-", dir=HOME_SLICE)
     try:
-        local_stl   = os.path.join(workdir, "model.stl")
-        local_ini   = os.path.join(workdir, "config.ini")
-        local_gcode = os.path.join(workdir, "out.gcode")
+        local_stl   = os.path.join("/var" + workdir, "model.stl")
+        local_ini   = os.path.join("/var" + workdir, "config.ini")
+        local_gcode = os.path.join("/var" + workdir, "out.gcode")
 
         print(f"Downloading {input_stl}...")
         s3_download(input_stl, local_stl)
@@ -119,10 +118,6 @@ def slice_once(msg_body):
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")
 
-        sand_stl = to_sandbox_path(local_stl)
-        sand_ini = to_sandbox_path(local_ini)
-        sand_out = to_sandbox_path(local_gcode)
-
         # print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
         # print(f"[JOB] input_stl={input_stl}")
         # print(f"[JOB] config_ini={config_ini}")
@@ -130,7 +125,7 @@ def slice_once(msg_body):
 
         cmd = [
             "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-            sand_stl, "--load", sand_ini, "--export-gcode", "--output", sand_out
+            local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)

@@ -151,7 +151,8 @@ def slice_once(msg_body):
             print("Result sent to RESULTS_QUEUE_URL:", result_msg)
         else:
             print("Result (no RESULTS_QUEUE_URL set):", result_msg)
-
+    except Exception as e:
+        print(e)
     # finally:
     #     shutil.rmtree(workdir, ignore_errors=True)
 

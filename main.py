@@ -16,7 +16,7 @@ BASE_FLATPAK = ["flatpak", "run", "--filesystem=home"]
 
 QUEUE_URL = os.environ.get("QUEUE_URL")
 RESULTS_QUEUE_URL = os.environ.get("RESULTS_QUEUE_URL")
-PRUSA = ["flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer"]
+PRUSA = ["flatpak", "run", "--filesystem=host", "com.prusa3d.PrusaSlicer"]
 PRICE_PER_KG = float(os.environ.get("PRICE_PER_KG", "25.0"))
 
 my_config = Config(
@@ -91,12 +91,6 @@ def ensure_exists(path, label):
             if not os.path.isfile(path):
                 raise FileNotFoundError(f"{label} not found: {path}")
 
-def to_sandbox_path(host_path: str) -> str:
-    if host_path.startswith(HOME_DIR + "/"):
-        return "/var" + host_path
-    return host_path
-
-
 def slice_once(msg_body):
     payload = json.loads(msg_body)
     input_stl = payload["input_stl"]
@@ -118,10 +112,6 @@ def slice_once(msg_body):
 
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")
-
-        sand_stl = to_sandbox_path(local_stl)
-        sand_ini = to_sandbox_path(local_ini)
-        sand_out = to_sandbox_path(local_gcode)
 
         # print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
         # print(f"[JOB] input_stl={input_stl}")

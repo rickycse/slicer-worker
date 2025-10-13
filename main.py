@@ -30,7 +30,7 @@ sqs = boto3.client("sqs", config=my_config)
 
 def s3_download(s3_uri, dest):
     u = urlparse(s3_uri)
-    s3.download_file(u.netloc, u.path.lstrip("/"), dest)
+    s3.download_file(dest)
 
 def s3_upload(src, s3_uri):
     u = urlparse(s3_uri)

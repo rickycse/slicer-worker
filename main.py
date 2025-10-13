@@ -100,9 +100,9 @@ def slice_once(msg_body):
 
     workdir = tempfile.mkdtemp(prefix="slice-", dir=HOME_SLICE)
     try:
-        local_stl   = os.path.join("/var" + workdir, "model.stl")
-        local_ini   = os.path.join("/var" + workdir, "config.ini")
-        local_gcode = os.path.join("/var" + workdir, "out.gcode")
+        local_stl   = os.path.join(workdir, "model.stl")
+        local_ini   = os.path.join(workdir, "config.ini")
+        local_gcode = os.path.join(workdir, "out.gcode")
 
         print(f"Downloading {input_stl}...")
         s3_download(input_stl, local_stl)

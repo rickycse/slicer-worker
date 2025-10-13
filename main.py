@@ -110,7 +110,6 @@ def slice_once(msg_body):
         print(f"Downloading {config_ini}...")
         s3_download(config_ini, local_ini)
 
-        # Fast-fail if inputs aren’t really there
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")
 
@@ -121,7 +120,7 @@ def slice_once(msg_body):
 
         cmd = [
             "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
-            "model.stl", "--load", "config.ini", "--export-gcode", "--output", "out.gcode"
+            local_stl, "--load", config_ini, "--export-gcode", "--output", local_gcode
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)

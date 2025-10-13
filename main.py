@@ -8,12 +8,13 @@ import os, tempfile
 
 load_dotenv()
 
-HOME_SLICE = os.path.expanduser("~/.slice")   # or "~/slice"
+HOME_DIR = os.path.expanduser("~")
+HOME_SLICE = os.path.join(HOME_DIR, ".slice")
 os.makedirs(HOME_SLICE, exist_ok=True)
 
 QUEUE_URL = os.environ.get("QUEUE_URL")
 RESULTS_QUEUE_URL = os.environ.get("RESULTS_QUEUE_URL")
-PRUSA = ["flatpak", "run", "com.prusa3d.PrusaSlicer"]
+PRUSA = ["flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer"]
 PRICE_PER_KG = float(os.environ.get("PRICE_PER_KG", "25.0"))
 
 my_config = Config(

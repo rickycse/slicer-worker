@@ -152,8 +152,8 @@ def slice_once(msg_body):
         else:
             print("Result (no RESULTS_QUEUE_URL set):", result_msg)
 
-    finally:
-        shutil.rmtree(workdir, ignore_errors=True)
+    # finally:
+    #     shutil.rmtree(workdir, ignore_errors=True)
 
 def main():
     if not QUEUE_URL:

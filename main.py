@@ -109,7 +109,7 @@ def slice_once(msg_body):
 
         print(f"Downloading {config_ini}...")
         s3_download(config_ini, local_ini)
-        
+
         print("\n=== Dumping config.ini for debug ===")
         with open(local_ini) as f:
             print(f.read())
@@ -123,8 +123,14 @@ def slice_once(msg_body):
         # print(f"[JOB] config_ini={config_ini}")
         # print(f"[JOB] output_gcode={output_gcode}")
 
+        check_cmd = [
+            "flatpak", "run", "--filesystem=home", "--command=bash", "com.prusa3d.PrusaSlicer",
+            "-lc", f'test -f "{local_ini}" && echo INI_OK; test -f "{local_stl}" && echo STL_OK; ls -l "{os.path.dirname(local_stl)}"'
+        ]
+        subprocess.check_call(check_cmd)
+
         cmd = [
-            "flatpak", "run", "--filesystem=host", "com.prusa3d.PrusaSlicer",
+            "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
             local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")

@@ -119,7 +119,7 @@ def slice_once(msg_body):
         # print(f"[JOB] output_gcode={output_gcode}")
 
         cmd = [
-            "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
+            "flatpak", "run", "--filesystem=host", "com.prusa3d.PrusaSlicer",
             local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")

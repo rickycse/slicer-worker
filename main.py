@@ -119,8 +119,11 @@ def slice_once(msg_body):
         print(f"[JOB] config_ini={config_ini}")
         print(f"[JOB] output_gcode={output_gcode}")
 
-        cmd = BASE_FLATPAK + ["--cwd", workdir, "com.prusa3d.PrusaSlicer", "model.stl", "--load", "config.ini", "--export-gcode", "--output", "out.gcode"]
-        print("Running:", " ".join(cmd))
+        cmd = [
+            "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
+            "model.stl", "--load", "config.ini", "--export-gcode", "--output", "out.gcode"
+        ]
+        print("Running:", " ".join(cmd), f"(cwd={workdir})")
         subprocess.check_call(cmd)
 
         ensure_exists(local_gcode, "Output G-code")

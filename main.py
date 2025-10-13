@@ -117,7 +117,7 @@ def slice_once(msg_body):
         print("=== End of config.ini ===\n")
 
         cmd = [
-            "flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer",
+            "flatpak", "run", f"--filesystem={workdir}", "com.prusa3d.PrusaSlicer",
             "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
         ]
         print("Running:", " ".join(cmd), f"(cwd={workdir})")

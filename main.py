@@ -12,6 +12,8 @@ HOME_DIR = os.path.expanduser("~")
 HOME_SLICE = os.path.join(HOME_DIR, ".slice")
 os.makedirs(HOME_SLICE, exist_ok=True)
 
+BASE_FLATPAK = ["flatpak", "run", "--filesystem=home"]
+
 QUEUE_URL = os.environ.get("QUEUE_URL")
 RESULTS_QUEUE_URL = os.environ.get("RESULTS_QUEUE_URL")
 PRUSA = ["flatpak", "run", "--filesystem=home", "com.prusa3d.PrusaSlicer"]
@@ -98,9 +100,9 @@ def slice_once(msg_body):
 
     workdir = tempfile.mkdtemp(prefix="slice-", dir=HOME_SLICE)
     try:
-        local_stl = os.path.join(workdir, "model.stl")
+        local_stl   = os.path.join(workdir, "model.stl")
+        local_ini   = os.path.join(workdir, "config.ini")
         local_gcode = os.path.join(workdir, "out.gcode")
-        local_ini = os.path.join(workdir, "config.ini")
 
         print(f"Downloading {input_stl}...")
         s3_download(input_stl, local_stl)
@@ -108,14 +110,16 @@ def slice_once(msg_body):
         print(f"Downloading {config_ini}...")
         s3_download(config_ini, local_ini)
 
+        # Fast-fail if inputs aren’t really there
+        ensure_exists(local_stl, "Input STL")
+        ensure_exists(local_ini, "Config INI")
+
         print(f"[WHOAMI] {os.popen('whoami').read().strip()}  [CWD] {os.getcwd()}")
         print(f"[JOB] input_stl={input_stl}")
         print(f"[JOB] config_ini={config_ini}")
         print(f"[JOB] output_gcode={output_gcode}")
-        ensure_exists(local_stl, "Input STL")
 
-        # Build the command
-        cmd = PRUSA + [local_stl, "--load", local_ini, "--export-gcode", "--output", local_gcode]
+        cmd = BASE_FLATPAK + ["--cwd", workdir, "com.prusa3d.PrusaSlicer", "model.stl", "--load", "config.ini", "--export-gcode", "--output", "out.gcode"]
         print("Running:", " ".join(cmd))
         subprocess.check_call(cmd)
 

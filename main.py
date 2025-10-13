@@ -109,6 +109,11 @@ def slice_once(msg_body):
 
         print(f"Downloading {config_ini}...")
         s3_download(config_ini, local_ini)
+        
+        print("\n=== Dumping config.ini for debug ===")
+        with open(local_ini) as f:
+            print(f.read())
+        print("=== End of config.ini ===\n")
 
         ensure_exists(local_stl, "Input STL")
         ensure_exists(local_ini, "Config INI")

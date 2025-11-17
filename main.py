@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 import boto3
 from botocore.config import Config
 from dotenv import load_dotenv
-import os, tempfile
 
 load_dotenv()
 
@@ -92,55 +91,55 @@ def slice_once(msg_body):
     output_gcode = payload["output_gcode"]
     job_id = payload.get("job_id")
 
-    workdir = tempfile.mkdtemp(prefix="slice-", dir=HOME_SLICE)
-    try:
-        local_stl   = os.path.join(workdir, "model.stl")
-        local_ini   = os.path.join(workdir, "config.ini")
-        local_gcode = os.path.join(workdir, "out.gcode")
+    with tempfile.TemporaryDirectory() as workdir:
+        try:
+            local_stl   = os.path.join(workdir, "model.stl")
+            local_ini   = os.path.join(workdir, "config.ini")
+            local_gcode = os.path.join(workdir, "out.gcode")
 
-        print(f"Downloading {input_stl}...")
-        s3_download(input_stl, local_stl)
+            print(f"Downloading {input_stl}...")
+            s3_download(input_stl, local_stl)
 
-        print(f"Downloading {config_ini}...")
-        s3_download(config_ini, local_ini)
+            print(f"Downloading {config_ini}...")
+            s3_download(config_ini, local_ini)
 
-        print("\n=== Dumping config.ini for debug ===")
-        print("CONFIG PATH: ", local_ini)
-        with open(local_ini) as f:
-            print(f.read())
-        print("=== End of config.ini ===\n")
+            print("\n=== Dumping config.ini for debug ===")
+            print("CONFIG PATH: ", local_ini)
+            with open(local_ini) as f:
+                print(f.read())
+            print("=== End of config.ini ===\n")
 
-        cmd = [
-            "flatpak", "run", f"--filesystem={workdir}", "--command=prusa-slicer", "com.prusa3d.PrusaSlicer",
-            "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
-        ]
-        print("Running:", " ".join(cmd), f"(cwd={workdir})")
-        subprocess.check_call(cmd)
+            cmd = [
+                "flatpak", "run", f"--filesystem={workdir}", "--command=prusa-slicer", "com.prusa3d.PrusaSlicer",
+                "--load", local_ini, "--export-gcode", "--output", local_gcode, local_stl
+            ]
+            print("Running:", " ".join(cmd), f"(cwd={workdir})")
+            subprocess.check_call(cmd)
 
-        ensure_exists(local_gcode, "Output G-code")
+            ensure_exists(local_gcode, "Output G-code")
 
-        print(f"Uploading {output_gcode}")
-        s3_upload(local_gcode, output_gcode)
-        summary = parse_gcode_summary(local_gcode)
-        summary = compute_cost_if_missing(summary)
+            print(f"Uploading {output_gcode}")
+            s3_upload(local_gcode, output_gcode)
+            summary = parse_gcode_summary(local_gcode)
+            summary = compute_cost_if_missing(summary)
 
-        result_msg = {
-            "job_id": job_id,
-            "input_stl": input_stl,
-            "config_ini": config_ini,
-            "output_gcode": output_gcode,
-            "filament_grams": summary.get("filament_grams"),
-            "filament_cost": summary.get("filament_cost"),
-            "estimated_time": summary.get("estimated_time"),
-            "price_per_kg_used": PRICE_PER_KG if summary.get("filament_cost") is not None else None,
-            "timestamp": int(time.time()),
-            "status": "OK",
-        }
-        
-        send_gcode_info(result_msg)
-        
-    except Exception as e:
-        print(e)
+            result_msg = {
+                "job_id": job_id,
+                "input_stl": input_stl,
+                "config_ini": config_ini,
+                "output_gcode": output_gcode,
+                "filament_grams": summary.get("filament_grams"),
+                "filament_cost": summary.get("filament_cost"),
+                "estimated_time": summary.get("estimated_time"),
+                "price_per_kg_used": PRICE_PER_KG if summary.get("filament_cost") is not None else None,
+                "timestamp": int(time.time()),
+                "status": "OK",
+            }
+            
+            send_gcode_info(result_msg)
+            
+        except Exception as e:
+            print(e)
     # finally:
     #     shutil.rmtree(workdir, ignore_errors=True)
 

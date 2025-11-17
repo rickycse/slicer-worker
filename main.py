@@ -65,16 +65,10 @@ def parse_gcode_summary(gcode_path):
                 if "filament" in l:
                     prefix = 'filament used [g] = '
                     if prefix in l:
-                        s = l[len(prefix) + 1:].strip()
-                        temp = []
-                        for c in s:
-                            if c.isnumeric():
-                                temp.append(c)
-                        grams = int(''.join(temp))
-
-                    prefix = 'filament used [cm3] = '
-                    if prefix in l:
-                        cm3 = float(l[len(prefix) + 1:].strip())
+                        s = l.split(prefix, 1)[1]
+                        m = re.search(r'([\d.]+)', s)
+                        if m:
+                            grams = float(m.group(1))
 
     return {"filament_grams": grams, "filament_cost": cost, "estimated_time": est_time}
 

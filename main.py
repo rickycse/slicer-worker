@@ -63,7 +63,7 @@ def parse_gcode_summary(gcode_path):
                 l = line.lower()
 
                 if "filament" in l:
-                    prefix = 'filament used [mm] = '
+                    prefix = 'filament used [g] = '
                     if prefix in l:
                         grams = float(l[len(prefix) + 1:].strip())
                     

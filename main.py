@@ -48,33 +48,28 @@ def parse_gcode_summary(gcode_path):
         "filament_cost": float or None,
         "estimated_time": str or None
       }
-    For multi-extruder values (comma-separated), grams are summed.
     """
+    if not os.path.isfile(gcode_path):
+        print("G-code not found:", gcode_path)
+        return {"filament_grams": None, "filament_cost": None, "estimated_time": None}
+
     grams = None
     cost = None
     est_time = None
 
     with open(gcode_path, "r", encoding="utf-8", errors="ignore") as f:
-        for line in f:
-            m = FILAMENT_G_RE.match(line)
-            if m:
-                # Could be "12.3" or "12.3, 4.5"
-                parts = [p.strip() for p in m.group(1).split(",")]
-                try:
-                    grams = sum(float(x) for x in parts if x)
-                except ValueError:
-                    pass
+        with open(gcode_path, "r") as f:
+            for line in f:
+                l = line.lower()
 
-            m = FILAMENT_COST_RE.match(line)
-            if m:
-                try:
-                    cost = float(m.group(1))
-                except ValueError:
-                    pass
-
-            m = PRINT_TIME_RE.match(line)
-            if m:
-                est_time = m.group(1).strip()
+                if "filament" in l:
+                    prefix = 'filament used [mm] = '
+                    if prefix in l:
+                        grams = float(l[len(prefix) + 1:].strip())
+                    
+                    prefix = 'filament used [cm3] = '
+                    if prefix in l:
+                        cm3 = float(l[len(prefix) + 1:].strip())
 
     return {"filament_grams": grams, "filament_cost": cost, "estimated_time": est_time}
 
@@ -142,15 +137,24 @@ def slice_once(msg_body):
             "timestamp": int(time.time()),
             "status": "OK",
         }
+        
+        send_gcode_info(result_msg)
+        
+    except Exception as e:
+        print(e)
+    # finally:
+    #     shutil.rmtree(workdir, ignore_errors=True)
 
+def send_gcode_info(info):
+    try:
         if RESULTS_QUEUE_URL:
             sqs.send_message(
                 QueueUrl=RESULTS_QUEUE_URL,
-                MessageBody=json.dumps(result_msg),
+                MessageBody=json.dumps(info),
             )
-            print("Result sent to RESULTS_QUEUE_URL:", result_msg)
+            print("Result sent to RESULTS_QUEUE_URL:", info)
         else:
-            print("Result (no RESULTS_QUEUE_URL set):", result_msg)
+            print("Result (no RESULTS_QUEUE_URL set):", info)
     except Exception as e:
         print(e)
     # finally:
